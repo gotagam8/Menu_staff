@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panneau d'Administration RPG / Roleplay</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0b0f17',
+                            800: '#111827',
+                            700: '#1f2937',
+                            600: '#374151',
+                        },
+                        brand: {
+                            primary: '#6366f1',
+                            accent: '#8b5cf6',
+                            danger: '#ef4444',
+                            warning: '#f59e0b',
+                            success: '#10b981',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for stats graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f17;
+            color: #f3f4f6;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        .glow-effect {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-dark-800 border-b border-gray-800 sticky top-0 z-30 px-4 lg:px-8 py-3 flex items-center justify-between shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl text-white shadow-lg">
+                <i class="fa-solid font-bold fa-shield-halved text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
+                    NEXUS <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold">ADMIN V2.4</span>
+                </h1>
+                <p class="text-xs text-gray-400">Panneau de Contrôle Roleplay</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3 sm:space-x-4">
+            <!-- Server Status Badge -->
+            <div class="hidden sm:flex items-center space-x-2 bg-dark-700/50 px-3 py-1.5 rounded-lg border border-gray-700/50">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs font-medium text-gray-300">Serveur RP #1 (32ms)</span>
+            </div>
+
+            <!-- Auto Stream Toggle Button -->
+            <button id="toggleAutoStreamBtn" onclick="toggleAutoStream()" class="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-md active:scale-95">
+                <i id="toggleAutoStreamIcon" class="fa-solid fa-play text-xs"></i>
+                <span id="toggleAutoStreamText" class="hidden sm:inline">Flux Auto : ON</span>
+            </button>
+
+            <!-- Reset Data Button -->
+            <button onclick="resetSimulation()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5" title="Réinitialiser la simulation">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden md:inline">Reset</span>
+            </button>
+
+            <!-- Admin Profile Avatar -->
+            <div class="flex items-center space-x-3 border-l border-gray-700 pl-3 sm:pl-4">
+                <div class="relative">
+                    <img class="w-8 h-8 rounded-full border border-indigo-500/50" src="https://api.dicebear.com/7.x/bottts/svg?seed=AdminBoss" alt="Avatar Admin">
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-dark-800 rounded-full"></span>
+                </div>
+                <div class="hidden xl:block">
+                    <p class="text-xs font-semibold text-gray-200">Admin_Superviser</p>
+                    <p class="text-[10px] text-indigo-400 font-medium">Fondateur</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- Notification Banner -->
+        <div id="toastNotification" class="hidden transition-all duration-300 p-4 rounded-xl border text-sm font-medium flex items-center justify-between shadow-xl">
+            <div class="flex items-center gap-3">
+                <i id="toastIcon" class="fa-solid text-lg"></i>
+                <span id="toastMessage"></span>
+            </div>
+            <button onclick="closeToast()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Dashboard Stats Section -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Players -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 relative overflow-hidden group hover:border-gray-700 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Joueurs</p>
+                        <h3 id="statTotalPlayers" class="text-2xl font-bold text-white mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
+                        <i class="fa-solid fa-users text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-gray-400 gap-1.5">
+                    <span class="text-emerald-400 font-medium flex items-center"><i class="fa-solid fa-arrow-up text-[10px] mr-1"></i>+12%</span>
+                    <span>cette semaine</span>
+                </div>
+            </div>
+
+            <!-- Online Players -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 relative overflow-hidden group hover:border-gray-700 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Joueurs En Ligne</p>
+                        <h3 id="statOnlinePlayers" class="text-2xl font-bold text-emerald-400 mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                        <i class="fa-solid fa-wifi text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-gray-400 gap-1">
+                    <span id="statAfkCount" class="text-amber-400 font-medium">0 AFK</span>
+                    <span>· Serveur fluide</span>
+                </div>
+            </div>
+
+            <!-- Total Economy -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 relative overflow-hidden group hover:border-gray-700 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Masse Monétaire</p>
+                        <h3 id="statTotalMoney" class="text-2xl font-bold text-white mt-1">0 $</h3>
+                    </div>
+                    <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                        <i class="fa-solid fa-vault text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-gray-400 gap-1">
+                    <span>Moyenne/Joueur: </span>
+                    <span id="statAvgMoney" class="text-gray-200 font-semibold">0 $</span>
+                </div>
+            </div>
+
+            <!-- Most Popular Job -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 relative overflow-hidden group hover:border-gray-700 transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Secteur dominant</p>
+                        <h3 id="statTopJob" class="text-xl font-bold text-violet-400 mt-1 truncate max-w-[150px]">Chargement</h3>
+                    </div>
+                    <div class="p-3 bg-violet-500/10 text-violet-400 rounded-xl border border-violet-500/20">
+                        <i class="fa-solid fa-briefcase text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-gray-400 gap-1">
+                    <span id="statUnemployedCount" class="text-red-400 font-medium">0</span>
+                    <span>chômeurs enregistrés</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Graphic Analytics & Quick Info -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Job Distribution Chart -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-400"></i> Répartition des Métiers en Ville
+                    </h2>
+                    <span class="text-xs text-gray-500">Mise à jour en direct</span>
+                </div>
+                <div class="h-48 relative">
+                    <canvas id="jobChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Server Quick Settings / Stats -->
+            <div class="bg-dark-800 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i> Actions Rapides Serveur
+                    </h2>
+                    <div class="space-y-3">
+                        <button onclick="healAll()" class="w-full bg-dark-700 hover:bg-gray-700 text-gray-200 p-3 rounded-xl border border-gray-700/60 text-xs font-medium flex items-center justify-between transition">
+                            <span class="flex items-center gap-2.5"><i class="fa-solid fa-heart-pulse text-red-400"></i> Soigner Tous Les Joueurs</span>
+                            <i class="fa-solid fa-chevron-right text-gray-500 text-[10px]"></i>
+                        </button>
+                        <button onclick="giveGlobalBonus()" class="w-full bg-dark-700 hover:bg-gray-700 text-gray-200 p-3 rounded-xl border border-gray-700/60 text-xs font-medium flex items-center justify-between transition">
+                            <span class="flex items-center gap-2.5"><i class="fa-solid fa-gift text-amber-400"></i> Donner Bonus National (+1000$)</span>
+                            <i class="fa-solid fa-chevron-right text-gray-500 text-[10px]"></i>
+                        </button>
+                        <button onclick="clearLogs()" class="w-full bg-dark-700 hover:bg-gray-700 text-gray-200 p-3 rounded-xl border border-gray-700/60 text-xs font-medium flex items-center justify-between transition">
+                            <span class="flex items-center gap-2.5"><i class="fa-solid fa-broom text-sky-400"></i> Nettoyer le Journal de Logs</span>
+                            <i class="fa-solid fa-chevron-right text-gray-500 text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+                    <span>Météo Serveur: <strong class="text-gray-200">Ensoleillé</strong></span>
+                    <span>Heure RP: <strong class="text-gray-200">14:30</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <section class="bg-dark-800 border border-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                <!-- Search input -->
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="filterPlayers()" placeholder="Rechercher un joueur par nom ou ID..." 
+                        class="w-full bg-dark-900 border border-gray-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+
+                <!-- Filters dropdowns -->
+                <div class="flex flex-wrap sm:flex-nowrap gap-3">
+                    <!-- Filter Status -->
+                    <div class="w-full sm:w-auto">
+                        <select id="filterStatus" onchange="filterPlayers()" class="w-full bg-dark-900 border border-gray-700/80 rounded-xl px-3 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 transition">
+                            <option value="ALL">Tous les statuts</option>
+                            <option value="En ligne">En ligne</option>
+                            <option value="Hors ligne">Hors ligne</option>
+                            <option value="AFK">AFK</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter Job -->
+                    <div class="w-full sm:w-auto">
+                        <select id="filterJob" onchange="filterPlayers()" class="w-full bg-dark-900 border border-gray-700/80 rounded-xl px-3 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 transition">
+                            <option value="ALL">Tous les métiers</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Players Table -->
+        <section class="bg-dark-800 border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-dark-800/80">
+                <h2 class="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                    <i class="fa-solid fa-list text-indigo-400"></i> Liste des Citoyens / Joueurs 
+                    <span id="playerCountBadge" class="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full font-normal">0</span>
+                </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-gray-300">
+                    <thead class="bg-dark-900/60 text-gray-400 font-medium uppercase tracking-wider border-b border-gray-800">
+                        <tr>
+                            <th class="py-3.5 px-4">Joueur</th>
+                            <th class="py-3.5 px-4">Statut</th>
+                            <th class="py-3.5 px-4">Métier / Job</th>
+                            <th class="py-3.5 px-4">Niveau / XP</th>
+                            <th class="py-3.5 px-4">Portefeuille / Banque</th>
+                            <th class="py-3.5 px-4">Santé / Armure</th>
+                            <th class="py-3.5 px-4">Localisation</th>
+                            <th class="py-3.5 px-4 text-right">Actions Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody" class="divide-y divide-gray-800/60">
+                        <!-- Populated via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyTableState" class="hidden p-8 text-center text-gray-500">
+                <i class="fa-solid fa-user-slash text-3xl mb-2 text-gray-600"></i>
+                <p class="text-sm">Aucun joueur ne correspond à votre recherche.</p>
+            </div>
+        </section>
+
+        <!-- Logs Section -->
+        <section class="bg-dark-800 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                    <i class="fa-solid fa-terminal text-emerald-400"></i> Journal d'activités Admin (Logs)
+                </h2>
+                <span class="text-[11px] text-gray-500">Dernières actions enregistrées</span>
+            </div>
+            <div id="logsContainer" class="bg-dark-900 border border-gray-800 rounded-xl p-4 h-44 overflow-y-auto font-mono text-[11px] space-y-2">
+                <!-- Logs populated by JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-800 border-t border-gray-800 py-4 text-center text-xs text-gray-500 mt-8">
+        Panneau d'Administration RPG Dashboard - Interface Fictive Interactive
+    </footer>
+
+    <!-- MODAL: Details Player -->
+    <div id="detailsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-gray-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('detailsModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            
+            <div class="flex items-center space-x-4 mb-6">
+                <img id="detailAvatar" class="w-16 h-16 rounded-2xl border-2 border-indigo-500/40 bg-dark-900" src="" alt="">
+                <div>
+                    <h3 id="detailName" class="text-xl font-bold text-white">---</h3>
+                    <p class="text-xs text-indigo-400">ID: <span id="detailId">#0</span> | Statut: <span id="detailStatus" class="font-medium">---</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Stats Box -->
+                <div class="bg-dark-900 p-4 rounded-xl border border-gray-800 space-y-2">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Informations Générales</h4>
+                    <p class="text-xs flex justify-between"><span class="text-gray-400">Métier:</span> <span id="detailJob" class="text-gray-200 font-medium">--</span></p>
+                    <p class="text-xs flex justify-between"><span class="text-gray-400">Niveau & XP:</span> <span id="detailLvl" class="text-gray-200 font-medium">--</span></p>
+                    <p class="text-xs flex justify-between"><span class="text-gray-400">Argent liquide:</span> <span id="detailCash" class="text-emerald-400 font-medium">--</span></p>
+                    <p class="text-xs flex justify-between"><span class="text-gray-400">Compte en banque:</span> <span id="detailBank" class="text-emerald-400 font-medium">--</span></p>
+                    <p class="text-xs flex justify-between"><span class="text-gray-400">Zone actuelle:</span> <span id="detailZone" class="text-gray-200 font-medium">--</span></p>
+                </div>
+
+                <!-- Inventory Box -->
+                <div class="bg-dark-900 p-4 rounded-xl border border-gray-800">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Inventaire Sac à Dos</h4>
+                    <ul id="detailInventory" class="text-xs text-gray-300 space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                        <!-- Items -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sanctions History -->
+            <div class="bg-dark-900 p-4 rounded-xl border border-gray-800 mb-6">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> Historique des Sanctions</h4>
+                <div id="detailSanctions" class="text-xs text-gray-400 space-y-1 max-h-24 overflow-y-auto">
+                    <!-- Sanctions -->
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="closeModal('detailsModal')" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-xs font-medium">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Money / XP Management -->
+    <div id="moneyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('moneyModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-coins text-amber-400"></i> Gestion Financière / XP
+            </h3>
+            
+            <input type="hidden" id="modalPlayerId">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Cible</label>
+                    <input type="text" id="modalPlayerName" disabled class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-300 font-semibold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Type de Transaction</label>
+                    <select id="modalType" class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200">
+                        <option value="cash_add">Ajouter Argent Liquide ($)</option>
+                        <option value="bank_add">Ajouter Argent Banque ($)</option>
+                        <option value="xp_add">Ajouter Expérience (XP)</option>
+                        <option value="cash_remove">Retirer Argent Liquide ($)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Montant / Valeur</label>
+                    <input type="number" id="modalAmount" min="1" value="500" class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button onclick="closeModal('moneyModal')" class="bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Annuler</button>
+                    <button onclick="applyMoneyXP()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-medium">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Sanction (Warn/Kick/Ban) -->
+    <div id="sanctionModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('sanctionModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-gavel text-red-400"></i> Appliquer une Sanction
+            </h3>
+            
+            <input type="hidden" id="sanctionPlayerId">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Joueur Sélectionné</label>
+                    <input type="text" id="sanctionPlayerName" disabled class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-300 font-semibold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Type de Sanction</label>
+                    <select id="sanctionType" class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-200">
+                        <option value="WARN">Avertissement (Warn)</option>
+                        <option value="KICK">Expulser (Kick)</option>
+                        <option value="BAN">Bannir définitivement (Ban)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Raison de la sanction</label>
+                    <textarea id="sanctionReason" rows="3" placeholder="Ex: Non-respect du Roleplay, Troll, Insultes..." class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-xs text-gray-200 focus:outline-none focus:border-red-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button onclick="closeModal('sanctionModal')" class="bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Annuler</button>
+                    <button onclick="applySanction()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-medium">Appliquer Sanction</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- APP LOGIC & SCRIPT -->
+    <script>
+        // List of available jobs with custom styling badges
+        const JOBS = [
+            { name: "Policier", icon: "fa-shield-halved", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+            { name: "Médecin", icon: "fa-user-nurse", color: "bg-red-500/10 text-red-400 border-red-500/20" },
+            { name: "Banquier", icon: "fa-piggy-bank", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+            { name: "Cuisinier", icon: "fa-utensils", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+            { name: "Mécanicien", icon: "fa-wrench", color: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+            { name: "Avocat", icon: "fa-scale-balanced", color: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+            { name: "Journaliste", icon: "fa-newspaper", color: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
+            { name: "Chômeur", icon: "fa-user", color: "bg-gray-500/10 text-gray-400 border-gray-500/20" }
+        ];
+
+        // Random name generators for auto-simulation
+        const FIRST_NAMES = ["Thomas", "Alexandre", "David", "Sébastien", "Julien", "Nicolas", "Maxime", "Léo", "Sarah", "Chloé", "Emma", "Léa", "Manon", "Hugo", "Enzo", "Arthur", "Mathieu", "Inès", "Lucie", "Kévin"];
+        const LAST_NAMES = ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David", "Morel", "Fournier", "Girard", "Bonnet"];
+        const CITY_ZONES = ["Commissariat Central", "Hôpital Pillbox", "Garage Benny's", "Banque Centrale", "Restaurant Burger Shot", "Place du Cube", "Tribunal de Grande Instance", "Aéroport International", "Port de Los Santos", "Vinewood Hills"];
+        const POSSIBLE_ITEMS = ["Téléphone", "Permis de conduire", "Sandwich", "Bouteille d'eau", "Trousse de soins", "Radio HP", "Clé de voiture", "Couteau suisse", "Carte bancaire VIP"];
+
+        // Sample initial datasets for Roleplay simulation
+        const DEFAULT_PLAYERS = [
+            { id: 101, name: "Marcus Holloway", status: "En ligne", job: "Policier", level: 14, xp: 2400, cash: 1250, bank: 45000, health: 100, armor: 75, zone: "Commissariat Central", inventory: ["Pistolet 9mm", "Menottes", "Radio HP", "Sandwich"], sanctions: [] },
+            { id: 102, name: "Elena Rostova", status: "En ligne", job: "Médecin", level: 9, xp: 1100, cash: 820, bank: 28900, health: 90, armor: 0, zone: "Hôpital Pillbox", inventory: ["Trousse de secours", "Defibrillateur", "Lait"], sanctions: [] },
+            { id: 103, name: "Lucas 'Viper' Perez", status: "Hors ligne", job: "Mécanicien", level: 22, xp: 5800, cash: 4500, bank: 120000, health: 100, armor: 0, zone: "Garage Benny's", inventory: ["Kit de réparation", "Clé à molette", "Pneu de rechange"], sanctions: ["Warn (Spam Micro)"] },
+            { id: 104, name: "Sophie Bernard", status: "AFK", job: "Banquier", level: 5, xp: 600, cash: 310, bank: 15000, health: 100, armor: 0, zone: "Banque Centrale", inventory: ["Carte d'accès VIP", "Téléphone portable"], sanctions: [] },
+            { id: 105, name: "Dimitri Belikov", status: "En ligne", job: "Cuisinier", level: 3, xp: 200, cash: 150, bank: 3200, health: 45, armor: 0, zone: "Restaurant Burger Shot", inventory: ["Couteau de cuisine", "Ingrédients frais"], sanctions: [] },
+            { id: 106, name: "Antoine Morel", status: "Hors ligne", job: "Chômeur", level: 1, xp: 50, cash: 40, bank: 800, health: 100, armor: 0, zone: "Place du Cube", inventory: ["Bouteille d'eau"], sanctions: [] },
+            { id: 107, name: "Camille Vance", status: "En ligne", job: "Avocat", level: 18, xp: 4100, cash: 2100, bank: 89000, health: 100, armor: 0, zone: "Tribunal de Grande Instance", inventory: ["Mallette de documents", "Stylo de luxe"], sanctions: [] }
+        ];
+
+        // Global State
+        let players = [];
+        let logs = [];
+        let jobChartInstance = null;
+        let isAutoStreamActive = true;
+        let autoStreamTimer = null;
+
+        // Initialize App
+        window.onload = function() {
+            loadInitialData();
+            populateJobDropdowns();
+            renderDashboard();
+            renderTable();
+            initJobChart();
+            addLog("Système d'administration initialisé avec succès.", "system");
+            
+            // Start Automatic Player Stream
+            scheduleNextAutoEvent();
+        };
+
+        function loadInitialData() {
+            const stored = localStorage.getItem("rpg_admin_players");
+            if (stored) {
+                try {
+                    players = JSON.parse(stored);
+                } catch(e) {
+                    players = [...DEFAULT_PLAYERS];
+                }
+            } else {
+                players = [...DEFAULT_PLAYERS];
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem("rpg_admin_players", JSON.stringify(players));
+        }
+
+        // Reset All Data
+        function resetSimulation() {
+            if (confirm("Voulez-vous réinitialiser toutes les données des joueurs et de la simulation ?")) {
+                players = JSON.parse(JSON.stringify(DEFAULT_PLAYERS));
+                saveData();
+                renderDashboard();
+                renderTable();
+                updateJobChart();
+                addLog("La simulation a été réinitialisée avec les données d'origine.", "warning");
+                showToast("Simulation réinitialisée", "warning");
+            }
+        }
+
+        // Populate selects for jobs
+        function populateJobDropdowns() {
+            const filterJob = document.getElementById("filterJob");
+
+            JOBS.forEach(j => {
+                const opt1 = document.createElement("option");
+                opt1.value = j.name;
+                opt1.textContent = j.name;
+                filterJob.appendChild(opt1);
+            });
+        }
+
+        // AUTOMATIC REAL-TIME PLAYER SIMULATOR (WebSocket / Event Simulation)
+        function scheduleNextAutoEvent() {
+            if (autoStreamTimer) clearTimeout(autoStreamTimer);
+            
+            // Interval between 5s and 11s
+            const delay = Math.floor(Math.random() * 6000) + 5000;
+            autoStreamTimer = setTimeout(() => {
+                if (isAutoStreamActive) {
+                    simulatePlayerActivity();
+                }
+                scheduleNextAutoEvent();
+            }, delay);
+        }
+
+        function toggleAutoStream() {
+            isAutoStreamActive = !isAutoStreamActive;
+            const btn = document.getElementById("toggleAutoStreamBtn");
+            const icon = document.getElementById("toggleAutoStreamIcon");
+            const text = document.getElementById("toggleAutoStreamText");
+
+            if (isAutoStreamActive) {
+                btn.className = "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-md active:scale-95";
+                icon.className = "fa-solid fa-play text-xs";
+                text.textContent = "Flux Auto : ON";
+                showToast("Simulation en direct activée", "success");
+                addLog("Flux automatique de citoyens activé.", "action");
+            } else {
+                btn.className = "bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-md active:scale-95";
+                icon.className = "fa-solid fa-pause text-xs";
+                text.textContent = "Flux Auto : OFF";
+                showToast("Simulation en direct mise en pause", "warning");
+                addLog("Flux automatique de citoyens désactivé.", "warning");
+            }
+        }
+
+        function simulatePlayerActivity() {
+            // Random choice: 60% chance to join new player, 40% chance to disconnect or update status
+            const actionType = Math.random();
+
+            if (actionType < 0.6 || players.length < 3) {
+                // ADD A NEW PLAYER
+                const fname = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+                const lname = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+                const fullName = `${fname} ${lname}`;
+                
+                // Ensure unique ID
+                let newId = Math.floor(100 + Math.random() * 899);
+                while (players.some(p => p.id === newId)) {
+                    newId = Math.floor(100 + Math.random() * 899);
+                }
+
+                const randomJob = JOBS[Math.floor(Math.random() * JOBS.length)].name;
+                const randomZone = CITY_ZONES[Math.floor(Math.random() * CITY_ZONES.length)];
+                const randomCash = Math.floor(Math.random() * 1500) + 100;
+                const randomBank = Math.floor(Math.random() * 30000) + 2000;
+
+                const newPlayer = {
+                    id: newId,
+                    name: fullName,
+                    status: "En ligne",
+                    job: randomJob,
+                    level: Math.floor(Math.random() * 10) + 1,
+                    xp: Math.floor(Math.random() * 1500),
+                    cash: randomCash,
+                    bank: randomBank,
+                    health: 100,
+                    armor: Math.random() > 0.5 ? 50 : 0,
+                    zone: randomZone,
+                    inventory: [POSSIBLE_ITEMS[Math.floor(Math.random() * POSSIBLE_ITEMS.length)], "Téléphone"],
+                    sanctions: []
+                };
+
+                players.unshift(newPlayer); // Add to beginning of array
+                saveData();
+                renderDashboard();
+                renderTable();
+                updateJobChart();
+
+                showToast(`Un nouveau joueur a rejoint la ville : ${fullName} (ID: #${newId})`, "success");
+                addLog(`<strong>${fullName}</strong> (ID: #${newId}) s'est connecté au serveur.`, "success");
+
+            } else {
+                // DISCONNECT OR CHANGE STATUS OF AN EXISTING PLAYER
+                const onlinePlayers = players.filter(p => p.status === "En ligne" || p.status === "AFK");
+                if (onlinePlayers.length === 0) return;
+
+                const targetPlayer = onlinePlayers[Math.floor(Math.random() * onlinePlayers.length)];
+                
+                if (Math.random() > 0.4) {
+                    // DISCONNECT
+                    targetPlayer.status = "Hors ligne";
+                    showToast(`Joueur déconnecté : ${targetPlayer.name} (ID: #${targetPlayer.id})`, "danger");
+                    addLog(`<strong>${targetPlayer.name}</strong> (ID: #${targetPlayer.id}) a quitté la ville.`, "danger");
+                } else {
+                    // SWITCH TO AFK OR BACK ONLINE
+                    targetPlayer.status = targetPlayer.status === "AFK" ? "En ligne" : "AFK";
+                    addLog(`Statut de <strong>${targetPlayer.name}</strong> changé pour : ${targetPlayer.status}.`, "info");
+                }
+
+                saveData();
+                renderDashboard();
+                renderTable();
+            }
+        }
+
+        // Dynamic Dashboard Counters
+        function renderDashboard() {
+            const total = players.length;
+            const online = players.filter(p => p.status === "En ligne").length;
+            const afk = players.filter(p => p.status === "AFK").length;
+            const unemployed = players.filter(p => p.job === "Chômeur").length;
+
+            const totalMoney = players.reduce((sum, p) => sum + p.cash + p.bank, 0);
+            const avgMoney = total > 0 ? Math.round(totalMoney / total) : 0;
+
+            // Find top job
+            const jobCounts = {};
+            players.forEach(p => { jobCounts[p.job] = (jobCounts[p.job] || 0) + 1; });
+            let topJob = "Aucun";
+            let maxCount = 0;
+            for (let job in jobCounts) {
+                if (jobCounts[job] > maxCount) {
+                    maxCount = jobCounts[job];
+                    topJob = job;
+                }
+            }
+
+            // Update UI elements
+            document.getElementById("statTotalPlayers").textContent = total;
+            document.getElementById("statOnlinePlayers").textContent = online;
+            document.getElementById("statAfkCount").textContent = `${afk} AFK`;
+            document.getElementById("statTotalMoney").textContent = totalMoney.toLocaleString('fr-FR') + " $";
+            document.getElementById("statAvgMoney").textContent = avgMoney.toLocaleString('fr-FR') + " $";
+            document.getElementById("statTopJob").textContent = topJob;
+            document.getElementById("statUnemployedCount").textContent = unemployed;
+            document.getElementById("playerCountBadge").textContent = total;
+        }
+
+        // Render Table Players
+        function renderTable() {
+            const tbody = document.getElementById("playersTableBody");
+            const emptyState = document.getElementById("emptyTableState");
+
+            const searchVal = document.getElementById("searchInput").value.toLowerCase();
+            const filterStatus = document.getElementById("filterStatus").value;
+            const filterJob = document.getElementById("filterJob").value;
+
+            tbody.innerHTML = "";
+
+            const filtered = players.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(searchVal) || p.id.toString().includes(searchVal);
+                const matchesStatus = filterStatus === "ALL" || p.status === filterStatus;
+                const matchesJob = filterJob === "ALL" || p.job === filterJob;
+                return matchesSearch && matchesStatus && matchesJob;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove("hidden");
+                return;
+            } else {
+                emptyState.classList.add("hidden");
+            }
+
+            filtered.forEach(p => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-dark-700/40 transition duration-150 border-b border-gray-800/60";
+
+                // Status Badge CSS
+                let statusBadge = "";
+                if (p.status === "En ligne") {
+                    statusBadge = `<span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>En Ligne</span>`;
+                } else if (p.status === "AFK") {
+                    statusBadge = `<span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>AFK</span>`;
+                } else {
+                    statusBadge = `<span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-gray-500/10 text-gray-400 border border-gray-500/20 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>Hors Ligne</span>`;
+                }
+
+                // Job Selector Options
+                let jobOptions = JOBS.map(j => `<option value="${j.name}" ${p.job === j.name ? 'selected' : ''}>${j.name}</option>`).join('');
+
+                const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${p.name}`;
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                            <img class="w-8 h-8 rounded-lg bg-dark-900 border border-gray-700" src="${avatarUrl}" alt="Avatar">
+                            <div>
+                                <div class="font-semibold text-gray-100 flex items-center gap-1.5">
+                                    ${p.name} 
+                                    ${p.sanctions.length > 0 ? '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-[10px]" title="A des avertissements"></i>' : ''}
+                                </div>
+                                <div class="text-[10px] text-gray-500">ID: #${p.id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">${statusBadge}</td>
+                    <td class="py-3 px-4">
+                        <select onchange="updatePlayerJob(${p.id}, this.value)" class="bg-dark-900 border border-gray-700 text-xs text-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                            ${jobOptions}
+                        </select>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-gray-200">Niv. ${p.level}</div>
+                        <div class="text-[10px] text-gray-500">${p.xp} XP</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="text-emerald-400 font-semibold">$${p.cash.toLocaleString()} <span class="text-gray-500 text-[10px] font-normal">(Cash)</span></div>
+                        <div class="text-indigo-300 font-semibold">$${p.bank.toLocaleString()} <span class="text-gray-500 text-[10px] font-normal">(Banque)</span></div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <!-- Health & Armor Progress Bars -->
+                        <div class="space-y-1 w-28">
+                            <div class="flex justify-between text-[9px] text-gray-400">
+                                <span>HP</span> <span>${p.health}%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-red-500 h-full" style="width: ${p.health}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-gray-400">
+                                <span>Armor</span> <span>${p.armor}%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-blue-500 h-full" style="width: ${p.armor}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-gray-400 flex items-center gap-1.5 mt-2">
+                        <i class="fa-solid fa-location-dot text-indigo-400 text-xs"></i>
+                        <span class="truncate max-w-[120px]" title="${p.zone}">${p.zone}</span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            <button onclick="teleportPlayer(${p.id})" class="p-1.5 bg-dark-700 hover:bg-indigo-600 text-gray-300 hover:text-white rounded-lg transition" title="Téléporter à soi">
+                                <i class="fa-solid fa-location-crosshairs text-xs"></i>
+                            </button>
+                            <button onclick="healPlayer(${p.id})" class="p-1.5 bg-dark-700 hover:bg-emerald-600 text-gray-300 hover:text-white rounded-lg transition" title="Soigner 100%">
+                                <i class="fa-solid fa-kit-medical text-xs"></i>
+                            </button>
+                            <button onclick="openMoneyModal(${p.id})" class="p-1.5 bg-dark-700 hover:bg-amber-600 text-gray-300 hover:text-white rounded-lg transition" title="Ajouter/Retirer Argent ou XP">
+                                <i class="fa-solid fa-coins text-xs"></i>
+                            </button>
+                            <button onclick="openSanctionModal(${p.id})" class="p-1.5 bg-dark-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg transition" title="Sanctionner (Warn/Kick/Ban)">
+                                <i class="fa-solid fa-gavel text-xs"></i>
+                            </button>
+                            <button onclick="openDetailsModal(${p.id})" class="p-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg transition" title="Voir fiche complète">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Filtering Trigger
+        function filterPlayers() {
+            renderTable();
+        }
+
+        // ACTIONS ADMIN
+        function updatePlayerJob(id, newJob) {
+            const player = players.find(p => p.id === id);
+            if (player) {
+                const oldJob = player.job;
+                player.job = newJob;
+                saveData();
+                renderDashboard();
+                updateJobChart();
+                addLog(`Métier de <strong>${player.name}</strong> modifié : ${oldJob} ➔ <span class="text-indigo-400">${newJob}</span>`, "action");
+                showToast(`Métier mis à jour pour ${player.name}`, "success");
+            }
+        }
+
+        function teleportPlayer(id) {
+            const player = players.find(p => p.id === id);
+            if (player) {
+                const oldZone = player.zone;
+                player.zone = "Position Admin (Téléporté)";
+                saveData();
+                renderTable();
+                addLog(`<strong>${player.name}</strong> a été téléporté auprès de vous (Ancienne zone: ${oldZone}).`, "action");
+                showToast(`${player.name} téléporté auprès de vous !`, "info");
+            }
+        }
+
+        function healPlayer(id) {
+            const player = players.find(p => p.id === id);
+            if (player) {
+                player.health = 100;
+                player.armor = 100;
+                saveData();
+                renderTable();
+                addLog(`Santé et armure de <strong>${player.name}</strong> rechargées à 100%.`, "action");
+                showToast(`${player.name} a été totalement soigné.`, "success");
+            }
+        }
+
+        function healAll() {
+            players.forEach(p => {
+                p.health = 100;
+                p.armor = 100;
+            });
+            saveData();
+            renderTable();
+            addLog("Soins globaux appliqués à l'ensemble des joueurs du serveur.", "action");
+            showToast("Tous les joueurs ont été soignés !", "success");
+        }
+
+        function giveGlobalBonus() {
+            players.forEach(p => {
+                p.bank += 1000;
+            });
+            saveData();
+            renderDashboard();
+            renderTable();
+            addLog("Bonus national octroyé : 1,000 $ versés sur tous les comptes bancaires.", "action");
+            showToast("Bonus de 1000$ versé à tous !", "success");
+        }
+
+        // Money Modal Logic
+        function openMoneyModal(id) {
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+
+            document.getElementById("modalPlayerId").value = player.id;
+            document.getElementById("modalPlayerName").value = `${player.name} (#${player.id})`;
+            openModal("moneyModal");
+        }
+
+        function applyMoneyXP() {
+            const id = parseInt(document.getElementById("modalPlayerId").value);
+            const type = document.getElementById("modalType").value;
+            const amount = parseInt(document.getElementById("modalAmount").value) || 0;
+            const player = players.find(p => p.id === id);
+
+            if (!player || amount <= 0) return;
+
+            if (type === "cash_add") {
+                player.cash += amount;
+                addLog(`+$${amount} (Cash) accordé à <strong>${player.name}</strong>.`, "money");
+            } else if (type === "bank_add") {
+                player.bank += amount;
+                addLog(`+$${amount} (Banque) déposé pour <strong>${player.name}</strong>.`, "money");
+            } else if (type === "xp_add") {
+                player.xp += amount;
+                if (player.xp >= player.level * 500) {
+                    player.level += 1;
+                    addLog(`<strong>${player.name}</strong> a gagné un niveau ! (Niv. ${player.level})`, "success");
+                }
+                addLog(`+${amount} XP accordé à <strong>${player.name}</strong>.`, "action");
+            } else if (type === "cash_remove") {
+                player.cash = Math.max(0, player.cash - amount);
+                addLog(`-$${amount} (Cash) retiré à <strong>${player.name}</strong>.`, "money");
+            }
+
+            saveData();
+            renderDashboard();
+            renderTable();
+            closeModal("moneyModal");
+            showToast("Modification financière enregistrée.", "success");
+        }
+
+        // Sanction Modal Logic
+        function openSanctionModal(id) {
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+
+            document.getElementById("sanctionPlayerId").value = player.id;
+            document.getElementById("sanctionPlayerName").value = `${player.name} (#${player.id})`;
+            document.getElementById("sanctionReason").value = "";
+            openModal("sanctionModal");
+        }
+
+        function applySanction() {
+            const id = parseInt(document.getElementById("sanctionPlayerId").value);
+            const type = document.getElementById("sanctionType").value;
+            const reason = document.getElementById("sanctionReason").value.trim() || "Aucune raison fournie";
+            const player = players.find(p => p.id === id);
+
+            if (!player) return;
+
+            if (type === "WARN") {
+                player.sanctions.push(`Warn: ${reason} (${new Date().toLocaleDateString('fr-FR')})`);
+                addLog(`Avertissement (Warn) attribué à <strong>${player.name}</strong> | Raison: ${reason}`, "warning");
+                showToast(`Warn envoyé à ${player.name}`, "warning");
+            } else if (type === "KICK") {
+                player.status = "Hors ligne";
+                player.sanctions.push(`Kick: ${reason}`);
+                addLog(`<strong>${player.name}</strong> a été expulsé (Kick) | Raison: ${reason}`, "danger");
+                showToast(`${player.name} a été expulsé du serveur.`, "danger");
+            } else if (type === "BAN") {
+                player.status = "Hors ligne";
+                player.sanctions.push(`BAN DÉFINITIF: ${reason}`);
+                addLog(`<strong>${player.name}</strong> a été BANNIS du serveur | Raison: ${reason}`, "danger");
+                showToast(`${player.name} a été banni !`, "danger");
+            }
+
+            saveData();
+            renderDashboard();
+            renderTable();
+            closeModal("sanctionModal");
+        }
+
+        // Details Player Modal
+        function openDetailsModal(id) {
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+
+            document.getElementById("detailAvatar").src = `https://api.dicebear.com/7.x/bottts/svg?seed=${player.name}`;
+            document.getElementById("detailName").textContent = player.name;
+            document.getElementById("detailId").textContent = `#${player.id}`;
+            document.getElementById("detailStatus").textContent = player.status;
+            document.getElementById("detailJob").textContent = player.job;
+            document.getElementById("detailLvl").textContent = `Niveau ${player.level} (${player.xp} XP)`;
+            document.getElementById("detailCash").textContent = `$${player.cash.toLocaleString()}`;
+            document.getElementById("detailBank").textContent = `$${player.bank.toLocaleString()}`;
+            document.getElementById("detailZone").textContent = player.zone;
+
+            // Inventory List
+            const invContainer = document.getElementById("detailInventory");
+            invContainer.innerHTML = "";
+            if (player.inventory && player.inventory.length > 0) {
+                player.inventory.forEach(item => {
+                    const li = document.createElement("li");
+                    li.className = "flex items-center gap-2 bg-dark-800 px-2 py-1 rounded border border-gray-800";
+                    li.innerHTML = `<i class="fa-solid fa-cube text-indigo-400 text-[10px]"></i> ${item}`;
+                    invContainer.appendChild(li);
+                });
+            } else {
+                invContainer.innerHTML = `<li class="text-gray-500 italic">Sac à dos vide</li>`;
+            }
+
+            // Sanctions List
+            const sancContainer = document.getElementById("detailSanctions");
+            sancContainer.innerHTML = "";
+            if (player.sanctions && player.sanctions.length > 0) {
+                player.sanctions.forEach(sanc => {
+                    const div = document.createElement("div");
+                    div.className = "bg-red-500/10 border border-red-500/20 text-red-300 px-2.5 py-1 rounded text-[11px]";
+                    div.textContent = sanc;
+                    sancContainer.appendChild(div);
+                });
+            } else {
+                sancContainer.innerHTML = `<p class="text-emerald-400 text-[11px]"><i class="fa-solid fa-check mr-1"></i> Casier vierge, aucune sanction enregistrée.</p>`;
+            }
+
+            openModal("detailsModal");
+        }
+
+        // LOG SYSTEM
+        function addLog(msg, type = "info") {
+            const container = document.getElementById("logsContainer");
+            const time = new Date().toLocaleTimeString('fr-FR');
+            let color = "text-gray-300";
+
+            if (type === "action") color = "text-indigo-400";
+            if (type === "warning") color = "text-amber-400";
+            if (type === "danger") color = "text-red-400";
+            if (type === "success") color = "text-emerald-400";
+            if (type === "money") color = "text-emerald-300";
+
+            const logLine = document.createElement("div");
+            logLine.className = "flex items-start gap-2 border-b border-gray-800/40 pb-1";
+            logLine.innerHTML = `<span class="text-gray-600 font-mono">[${time}]</span> <span class="${color}">${msg}</span>`;
+
+            container.prepend(logLine);
+        }
+
+        function clearLogs() {
+            document.getElementById("logsContainer").innerHTML = "";
+            addLog("Journal de logs nettoyé par l'administrateur.", "system");
+        }
+
+        // CHART.JS INITIALIZATION
+        function initJobChart() {
+            const ctx = document.getElementById('jobChart').getContext('2d');
+            const jobCounts = getJobDistributionData();
+
+            jobChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: JOBS.map(j => j.name),
+                    datasets: [{
+                        label: 'Nombre de Joueurs',
+                        data: jobCounts,
+                        backgroundColor: [
+                            '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+                            '#f97316', '#a855f7', '#06b6d4', '#6b7280'
+                        ],
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#1f2937' },
+                            ticks: { color: '#9ca3af', stepSize: 1, font: { size: 10 } },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function getJobDistributionData() {
+            return JOBS.map(j => {
+                return players.filter(p => p.job === j.name).length;
+            });
+        }
+
+        function updateJobChart() {
+            if (jobChartInstance) {
+                jobChartInstance.data.datasets[0].data = getJobDistributionData();
+                jobChartInstance.update();
+            }
+        }
+
+        // MODAL HELPERS
+        function openModal(id) {
+            document.getElementById(id).classList.remove("hidden");
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add("hidden");
+        }
+
+        // TOAST NOTIFICATION HELPERS
+        function showToast(message, type = "info") {
+            const toast = document.getElementById("toastNotification");
+            const toastMsg = document.getElementById("toastMessage");
+            const toastIcon = document.getElementById("toastIcon");
+
+            toastMsg.textContent = message;
+
+            // Apply style depending on type
+            toast.className = "p-4 rounded-xl border text-sm font-medium flex items-center justify-between shadow-xl transition-all duration-300 mb-4 ";
+
+            if (type === "success") {
+                toast.classList.add("bg-emerald-950/80", "border-emerald-500/40", "text-emerald-200");
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "warning") {
+                toast.classList.add("bg-amber-950/80", "border-amber-500/40", "text-amber-200");
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            } else if (type === "danger") {
+                toast.classList.add("bg-red-950/80", "border-red-500/40", "text-red-200");
+                toastIcon.className = "fa-solid fa-circle-xmark text-red-400";
+            } else {
+                toast.classList.add("bg-indigo-950/80", "border-indigo-500/40", "text-indigo-200");
+                toastIcon.className = "fa-solid fa-circle-info text-indigo-400";
+            }
+
+            toast.classList.remove("hidden");
+
+            setTimeout(() => {
+                closeToast();
+            }, 4000);
+        }
+
+        function closeToast() {
+            document.getElementById("toastNotification").classList.add("hidden");
+        }
+    </script>
+</body>
+</html>
